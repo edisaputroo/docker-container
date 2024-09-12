@@ -2,12 +2,22 @@ pipeline {
     agent any
 
     environment {
-        // Docker image name and tag
-        IMAGE_NAME = 'my-node-app'
+        // Define Docker image name and tag
+        IMAGE_NAME = 'my-nginx-image'
         IMAGE_TAG = 'latest'
+        CONTAINER_NAME = 'nginx-container'
+        HOST_PORT = '8092'
+        CONTAINER_PORT = '80'
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                // Checkout code from GitHub
+                git branch: 'main', url: 'https://github.com/edisaputroo/docker-container.git'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -17,24 +27,25 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Run Docker Container') {
             steps {
                 script {
-                    // Create a container from the image and run tests
-                    docker.image("${IMAGE_NAME}:${IMAGE_TAG}").inside {
-                        sh 'npm test'
-                    }
+                    // Run the Docker container in detached mode
+                    docker.image("${IMAGE_NAME}:${IMAGE_TAG}").run(
+                        "-d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT}"
+                    )
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Test') {
             steps {
                 script {
-                    // Example deployment steps; adjust according to your needs
-                    echo 'Deploying application...'
-                    // Example deployment command (this could be different based on your setup)
-                    // sh './deploy.sh'
+                    // Example of running a test or validation script
+                    echo 'Running tests...'
+                    // Add commands to test the application if needed
+                    // For example, you might use curl to check the response
+                    sh 'curl -I http://localhost:${HOST_PORT}'
                 }
             }
         }
@@ -42,6 +53,11 @@ pipeline {
 
     post {
         always {
+            script {
+                // Cleanup: Stop and remove the Docker container
+                sh "docker stop ${CONTAINER_NAME} || true"
+                sh "docker rm ${CONTAINER_NAME} || true"
+            }
             echo 'Pipeline completed!'
         }
     }

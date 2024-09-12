@@ -1,20 +1,11 @@
-# Use the official Node.js image from Docker Hub
-FROM node:14
+# Use the official Nginx base image
+FROM nginx:latest
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
+# Copy custom content into the Nginx HTML directory
+COPY ./index.html /usr/share/nginx/html/index.html
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Expose port 80
+EXPOSE 80
 
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application code
-COPY . .
-
-# Expose port 3000
-EXPOSE 3000
-
-# Command to run the application
-CMD ["npm", "start"]
+# Run Nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]
