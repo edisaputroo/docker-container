@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Run Docker Compose on Remote Server') {
             steps {
-                sshagent(['remote-server-ssh-credentials-id']) {
+                sshagent(['root']) {
                     script {
                         // Connect to the remote server and run Docker Compose commands
                         sh '''
