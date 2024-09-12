@@ -1,35 +1,26 @@
 pipeline {
-    agent { label 'agent1' } // Specify the node labeled 'agent1'
+    agent { label 'agent1' } // Use the node labeled 'agent1'
 
     stages {
-        stage('Run Docker Compose on Remote Server') {
+        stage('Checkout Code') {
             steps {
-                sshagent(['jenkins-SM-login']) {
+                // Pull code from Git repository
+                git 'https://github.com/your-username/your-repository.git'
+            }
+        }
+        stage('Deploy Docker Compose') {
+            steps {
+                sshagent(['jenkins-SM-login']) { // Use your updated SSH credentials ID
                     script {
-                        // Connect to the remote server and run Docker Compose commands
+                        // Run Docker Compose commands on the remote server
                         sh '''
                         ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
-                        echo "Checking Docker Compose version..."
-                        docker compose version || docker-compose --version
-                        '
-                        '''
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
-                        echo "Pulling Docker images..."
-                        pwd
-                        '
-                        '''
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
-                        echo "Starting Docker Compose..."
-                        docker stack deploy --compose-file docker-compose.yml my-swarm-stack
-                        '
-                        '''
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
-                        echo "Listing Docker Compose services..."
-                        cd /path/to/docker-compose/directory &&
-                        docker compose ps || docker-compose ps
+                        echo "Changing to the Docker Compose directory..."
+                        cd /root
+                        echo "Deploying Docker stack..."
+                        docker stack deploy --compose-file docker-compose.yml my_nginx_stack
+                        echo "Listing Docker stack services..."
+                        docker stack services my_nginx_stack
                         '
                         '''
                     }
