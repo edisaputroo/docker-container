@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                // Pull code from the Git repository
+                // Pull code from Git repository
                 git branch: 'main', url: 'https://github.com/edisaputroo/docker-container.git'
             }
         }
@@ -12,13 +12,16 @@ pipeline {
             steps {
                 sshagent(['jenkins-SM-login']) { // Use your SSH credentials ID
                     script {
+                        // Copy Docker Compose file to the remote server
+                        sh '''
+                        scp -o StrictHostKeyChecking=no docker-compose.yml root@192.168.6.152:/root/docker-compose.yml
+                        '''
+                        
                         // Run Docker Compose commands on the remote server
                         sh '''
                         ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
-                        echo "Changing to the Docker Compose directory..."
-                        cd /root
                         echo "Deploying Docker stack..."
-                        docker stack deploy --compose-file docker-compose.yml my_nginx_stack
+                        docker stack deploy --compose-file /root/docker-compose.yml my_nginx_stack
                         echo "Listing Docker stack services..."
                         docker stack services my_nginx_stack
                         '
