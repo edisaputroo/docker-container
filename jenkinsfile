@@ -5,7 +5,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 // Pull code from Git repository
-                git 'https://github.com/your-username/your-repository.git'
+                git ''https://github.com/edisaputroo/docker-container.git''
             }
         }
         stage('Deploy Docker Compose') {
