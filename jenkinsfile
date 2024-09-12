@@ -1,49 +1,18 @@
 pipeline {
-    agent any
+    agent { label 'your-node-label' } // Specify the label of the node where the pipeline will run
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Print Working Directory on Jenkins') {
-            steps {
-                script {
-                    sh 'pwd'
-                }
-            }
-        }
-
-        stage('Validate Docker Compose File') {
-            steps {
-                script {
-                    sh '''
-                    if [ -f docker-compose.yml ]; then
-                        echo "docker-compose.yml exists"
-                        cat docker-compose.yml
-                    else
-                        echo "docker-compose.yml does not exist"
-                        exit 1
-                    fi
-                    '''
-                }
-            }
-        }
-
         stage('Run Docker Compose on Remote Server') {
             steps {
                 sshagent(['remote-server-ssh-credentials-id']) {
                     script {
-                        // Check Docker Compose version
+                        // Connect to the remote server and run Docker Compose commands
                         sh '''
                         ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
                         echo "Checking Docker Compose version..."
                         docker compose version || docker-compose --version
                         '
                         '''
-                        // Pull images
                         sh '''
                         ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
                         echo "Pulling Docker images..."
@@ -51,7 +20,6 @@ pipeline {
                         docker compose pull || docker-compose pull
                         '
                         '''
-                        // Run Docker Compose
                         sh '''
                         ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
                         echo "Starting Docker Compose..."
@@ -59,7 +27,6 @@ pipeline {
                         docker compose up -d || docker-compose up -d
                         '
                         '''
-                        // Verify Docker Compose services
                         sh '''
                         ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
                         echo "Listing Docker Compose services..."
@@ -68,38 +35,6 @@ pipeline {
                         '
                         '''
                     }
-                }
-            }
-        }
-
-        stage('Tear Down') {
-            steps {
-                sshagent(['remote-server-ssh-credentials-id']) {
-                    script {
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
-                        echo "Tearing down Docker Compose stack..."
-                        cd /path/to/docker-compose/directory &&
-                        docker compose down || docker-compose down
-                        '
-                        '''
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            sshagent(['remote-server-ssh-credentials-id']) {
-                script {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
-                    echo "Tearing down Docker Compose stack..."
-                    cd /path/to/docker-compose/directory &&
-                    docker compose down || docker-compose down
-                    '
-                    '''
                 }
             }
         }
