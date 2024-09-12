@@ -36,32 +36,35 @@ pipeline {
             steps {
                 sshagent(['remote-server-ssh-credentials-id']) {
                     script {
+                        // Check Docker Compose version
                         sh '''
-                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
-                        cd /path/to/docker-compose/directory &&
-                        docker compose version ||
-                        docker-compose --version
+                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
+                        echo "Checking Docker Compose version..."
+                        docker compose version || docker-compose --version
                         '
                         '''
+                        // Pull images
                         sh '''
-                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
+                        echo "Pulling Docker images..."
                         cd /path/to/docker-compose/directory &&
-                        docker compose pull ||
-                        docker-compose pull
+                        docker compose pull || docker-compose pull
                         '
                         '''
+                        // Run Docker Compose
                         sh '''
-                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
+                        echo "Starting Docker Compose..."
                         cd /path/to/docker-compose/directory &&
-                        docker compose up -d ||
-                        docker-compose up -d
+                        docker compose up -d || docker-compose up -d
                         '
                         '''
+                        // Verify Docker Compose services
                         sh '''
-                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
+                        echo "Listing Docker Compose services..."
                         cd /path/to/docker-compose/directory &&
-                        docker compose ps ||
-                        docker-compose ps
+                        docker compose ps || docker-compose ps
                         '
                         '''
                     }
@@ -74,10 +77,10 @@ pipeline {
                 sshagent(['remote-server-ssh-credentials-id']) {
                     script {
                         sh '''
-                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
+                        echo "Tearing down Docker Compose stack..."
                         cd /path/to/docker-compose/directory &&
-                        docker compose down ||
-                        docker-compose down
+                        docker compose down || docker-compose down
                         '
                         '''
                     }
@@ -91,10 +94,10 @@ pipeline {
             sshagent(['remote-server-ssh-credentials-id']) {
                 script {
                     sh '''
-                    ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                    ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
+                    echo "Tearing down Docker Compose stack..."
                     cd /path/to/docker-compose/directory &&
-                    docker compose down ||
-                    docker-compose down
+                    docker compose down || docker-compose down
                     '
                     '''
                 }
