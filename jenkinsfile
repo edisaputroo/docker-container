@@ -2,50 +2,34 @@ pipeline {
     agent any
 
     environment {
-        // Define Docker image name and tag
-        IMAGE_NAME = 'nginx'
-        IMAGE_TAG = 'latest'
-        CONTAINER_NAME = 'nginx-container'
-        HOST_PORT = '8092'
-        CONTAINER_PORT = '80'
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+        STACK_NAME = 'myapp-stack'
+        GIT_REPO = 'https://github.com/edisaputroo/docker-container.git'
+        IMAGE_NAME = 'nginx:latest'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone repository') {
             steps {
-                // Checkout code from GitHub
-                git branch: 'main', url: 'https://github.com/edisaputroo/docker-container.git'
+                git branch: 'main', url: "${GIT_REPO}"
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image from the Dockerfile
-                    docker.service.Create("${IMAGE_NAME}:${IMAGE_TAG}")
+                    // If you need to build a custom Docker image
+                    // docker.build("${IMAGE_NAME}")
+                    echo "Using NGINX image, skipping custom build"
                 }
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Deploy to Docker Swarm') {
             steps {
                 script {
-                    // Run the Docker container in detached mode
-                    docker.image("${IMAGE_NAME}:${IMAGE_TAG}").run(
-                        "-d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT}"
-                    )
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                script {
-                    // Example of running a test or validation script
-                    echo 'Running tests...'
-                    // Add commands to test the application if needed
-                    // For example, you might use curl to check the response
-                    sh 'curl -I http://localhost:${HOST_PORT}'
+                    // Deploying the stack using Docker Swarm
+                    sh "docker stack deploy --compose-file ${DOCKER_COMPOSE_FILE} ${STACK_NAME}"
                 }
             }
         }
@@ -54,9 +38,8 @@ pipeline {
     post {
         always {
             script {
-                // Cleanup: Stop and remove the Docker container
-                sh "docker stop ${CONTAINER_NAME} || true"
-                sh "docker rm ${CONTAINER_NAME} || true"
+                // Tear down the stack after the pipeline
+                sh "docker stack rm ${STACK_NAME}"
             }
             echo 'Pipeline completed!'
         }

@@ -1,0 +1,19 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8092:80"
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    networks:
+      - webnet
+
+networks:
+  webnet:
