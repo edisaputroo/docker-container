@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    environment {
+        // Docker image name and tag
+        IMAGE_NAME = 'my-node-app'
+        IMAGE_TAG = 'latest'
+    }
+
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image from the Dockerfile
+                    docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    // Create a container from the image and run tests
+                    docker.image("${IMAGE_NAME}:${IMAGE_TAG}").inside {
+                        sh 'npm test'
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    // Example deployment steps; adjust according to your needs
+                    echo 'Deploying application...'
+                    // Example deployment command (this could be different based on your setup)
+                    // sh './deploy.sh'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline completed!'
+        }
+    }
+}
