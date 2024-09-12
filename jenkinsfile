@@ -1,35 +1,86 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
-        STACK_NAME = 'myapp-stack'
-        GIT_REPO = 'https://github.com/edisaputroo/docker-container.git'
-        IMAGE_NAME = 'nginx:latest'
-    }
-
     stages {
-        stage('Clone repository') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: "${GIT_REPO}"
+                checkout scm
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Print Working Directory on Jenkins') {
             steps {
                 script {
-                    // If you need to build a custom Docker image
-                    // docker.build("${IMAGE_NAME}")
-                    echo "Using NGINX image, skipping custom build"
+                    sh 'pwd'
                 }
             }
         }
 
-        stage('Deploy to Docker Swarm') {
+        stage('Validate Docker Compose File') {
             steps {
                 script {
-                    // Deploying the stack using Docker Swarm
-                    sh "docker stack deploy --compose-file ${DOCKER_COMPOSE_FILE} ${STACK_NAME}"
+                    sh '''
+                    if [ -f docker-compose.yml ]; then
+                        echo "docker-compose.yml exists"
+                        cat docker-compose.yml
+                    else
+                        echo "docker-compose.yml does not exist"
+                        exit 1
+                    fi
+                    '''
+                }
+            }
+        }
+
+        stage('Run Docker Compose on Remote Server') {
+            steps {
+                sshagent(['remote-server-ssh-credentials-id']) {
+                    script {
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        cd /path/to/docker-compose/directory &&
+                        docker compose version ||
+                        docker-compose --version
+                        '
+                        '''
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        cd /path/to/docker-compose/directory &&
+                        docker compose pull ||
+                        docker-compose pull
+                        '
+                        '''
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        cd /path/to/docker-compose/directory &&
+                        docker compose up -d ||
+                        docker-compose up -d
+                        '
+                        '''
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        cd /path/to/docker-compose/directory &&
+                        docker compose ps ||
+                        docker-compose ps
+                        '
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Tear Down') {
+            steps {
+                sshagent(['remote-server-ssh-credentials-id']) {
+                    script {
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                        cd /path/to/docker-compose/directory &&
+                        docker compose down ||
+                        docker-compose down
+                        '
+                        '''
+                    }
                 }
             }
         }
@@ -37,11 +88,17 @@ pipeline {
 
     post {
         always {
-            script {
-                // Tear down the stack after the pipeline
-                sh "docker stack rm ${STACK_NAME}"
+            sshagent(['remote-server-ssh-credentials-id']) {
+                script {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no root@remote-docker-server '
+                    cd /path/to/docker-compose/directory &&
+                    docker compose down ||
+                    docker-compose down
+                    '
+                    '''
+                }
             }
-            echo 'Pipeline completed!'
         }
     }
 }
