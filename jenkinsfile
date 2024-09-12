@@ -17,7 +17,7 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no root@192.168.6.152 '
                         echo "Changing to the Docker Compose directory..."
                         cd /root
-                        echo "Deploying Docker stack..."
+                        echo "Deploying Docker stack...."
                         docker stack deploy --compose-file docker-compose.yml my_nginx_stack
                         echo "Listing Docker stack services..."
                         docker stack services my_nginx_stack

@@ -6,6 +6,6 @@ services:
     ports:
       - "8092:80"
     deploy:
-      replicas: 1
+      replicas: 2
       restart_policy:
         condition: any
