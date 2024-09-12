@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'your-node-label' } // Specify the label of the node where the pipeline will run
+    agent { label 'agent1' } // Specify the node labeled 'agent1'
 
     stages {
         stage('Run Docker Compose on Remote Server') {
